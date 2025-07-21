@@ -15,10 +15,64 @@ type Block struct {
 	Transactions string // 区块的数据
 	PreviousHash string // 上一个区块的 Hash
 	Hash         string // 当前区块的 Hash
+	// 请编写PoW相关的字段
+	Nonce      int64 // 工作量证明的随机数
+	Difficulty int64 // 工作量证明的难度
+}
+
+func (b *Block) Prefix() string {
+	prefix := ""
+	for i := int64(0); i < b.Difficulty; i++ {
+		prefix += "0"
+	}
+	return prefix
+}
+
+// Mining 挖矿, 计算区块的 Nonce 和 Difficulty
+// 注意: 需要实现工作量证明的算法
+// 这里可以使用简单的算法，例如: Nonce 从 0 开始递增
+// 直到找到一个满足条件的 Nonce，使得 Hash 的前 Difficulty 位为 0
+// 例如: Difficulty = 4 时，Hash 的前四位必须为 0000
+func (b *Block) Mining() {
+	prefix := b.Prefix()
+
+	for b.Hash == "" || b.Hash[:b.Difficulty] != prefix {
+		b.Nonce++
+		b.Hash = b.CalculateHash()
+	}
+}
+
+func (b *Block) Verification() error {
+	if b.Difficulty < 1 {
+		return errors.New("无效的区块: Difficulty 错误")
+	}
+
+	hast := b.CalculateHash()
+	if hast != b.Hash {
+		return errors.New("无效的区块: Hash 错误")
+	}
+
+	// 判断 hash 的前 Difficulty 位是否为 0
+	prefix := b.Prefix()
+
+	if b.Hash[:b.Difficulty] != prefix {
+		return errors.New("无效的区块: Hash 前缀错误")
+	}
+
+	return nil
+}
+
+// CalculateHash 计算区块的 Hash
+// 计算方式为: sha256(区块的字符串表示)
+// 区块的字符串表示为: Index + Timestamp + Transactions + PreviousHash
+// 注意: 需要将计算结果转换为十六进制字符串
+func (b *Block) CalculateHash() string {
+	bytes := sha256.Sum256(b.String())
+	return hex.EncodeToString(bytes[:])
 }
 
 func (b *Block) String() []byte {
-	formatStr := fmt.Sprintf("%d%d%s%s", b.Index, b.Timestamp, b.Transactions, b.PreviousHash)
+	formatStr := fmt.Sprintf("%d%d%s%s%d%d", b.Index, b.Timestamp, b.Transactions, b.PreviousHash, b.Nonce, b.Difficulty)
 	return []byte(formatStr)
 }
 
@@ -44,6 +98,10 @@ func (ch *Blockchain) AddBlock(b *Block) error {
 		return errors.New("无效的区块: PreviousHash 错误")
 	}
 
+	if err := b.Verification(); err != nil {
+		return err
+	}
+
 	ch.List = append(ch.List, b)
 
 	return nil
@@ -63,9 +121,10 @@ func CreateBlock(index int64, transactions string, previousHash string) *Block {
 	b.Timestamp = utils.GetUTCTimestamp()
 	b.Transactions = transactions
 	b.PreviousHash = previousHash
-
-	bytes := sha256.Sum256(b.String())
-	b.Hash = hex.EncodeToString(bytes[:])
+	b.Difficulty = 1 // 设置工作量证明的难度
+	b.Nonce = 0
+	b.Mining() // 计算 Nonce 和 Hash
+	// b.Hash = b.CalculateHash()
 
 	return &b
 }
