@@ -10,11 +10,11 @@ import (
 
 // Block 区块
 type Block struct {
-	Index        int64  // 区块高度
-	Timestamp    int64  // 区块创建时间戳
-	Transactions string // 区块的数据
-	PreviousHash string // 上一个区块的 Hash
-	Hash         string // 当前区块的 Hash
+	Index        int64          // 区块高度
+	Timestamp    int64          // 区块创建时间戳
+	Transactions []*Transaction // 区块的数据
+	PreviousHash string         // 上一个区块的 Hash
+	Hash         string         // 当前区块的 Hash
 	// 请编写PoW相关的字段
 	Nonce      int64 // 工作量证明的随机数
 	Difficulty int64 // 工作量证明的难度
@@ -72,7 +72,7 @@ func (b *Block) CalculateHash() string {
 }
 
 func (b *Block) String() []byte {
-	formatStr := fmt.Sprintf("%d%d%s%s%d%d", b.Index, b.Timestamp, b.Transactions, b.PreviousHash, b.Nonce, b.Difficulty)
+	formatStr := fmt.Sprintf("%d%d%v%s%d%d", b.Index, b.Timestamp, b.Transactions, b.PreviousHash, b.Nonce, b.Difficulty)
 	return []byte(formatStr)
 }
 
@@ -83,7 +83,7 @@ type Blockchain struct {
 
 // GenesisBlock 创世区块
 func (ch *Blockchain) GenesisBlock() {
-	ch.List = append(ch.List, CreateBlock(0, "", "0"))
+	ch.List = append(ch.List, CreateBlock(0, make([]*Transaction, 0), "0"))
 }
 
 // AddBlock 向区块链中添加一个区块
@@ -107,6 +107,28 @@ func (ch *Blockchain) AddBlock(b *Block) error {
 	return nil
 }
 
+// FindUTXO 查找未花费的交易输出.
+// 这里的 UTXO 是指未花费的交易输出,
+// 即所有交易中 Output 为指定地址的交易.
+// 返回一个包含所有未花费交易的切片.
+// 注意: 需要遍历所有区块和交易.
+func (ch *Blockchain) FindUTXO(address string) []*Transaction {
+	utxo := make([]*Transaction, 0)
+	for _, block := range ch.List {
+		if block == nil || block.Transactions == nil {
+			continue
+		}
+		// 遍历区块中的所有交易
+		for _, tx := range block.Transactions {
+			if tx.Output == address {
+				// 只添加未花费的交易
+				utxo = append(utxo, tx)
+			}
+		}
+	}
+	return utxo
+}
+
 func CreateBlockchain() *Blockchain {
 	var ch Blockchain
 	ch.GenesisBlock()
@@ -114,7 +136,7 @@ func CreateBlockchain() *Blockchain {
 }
 
 // CreateBlock 创建一个区块
-func CreateBlock(index int64, transactions string, previousHash string) *Block {
+func CreateBlock(index int64, transactions []*Transaction, previousHash string) *Block {
 	var b Block
 
 	b.Index = index

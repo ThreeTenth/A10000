@@ -8,7 +8,7 @@ import (
 func TestCreateBlock(t *testing.T) {
 	ch := core.CreateBlockchain()
 	prevBlock := ch.List[len(ch.List)-1]
-	b := core.CreateBlock(prevBlock.Index+1, "很好", prevBlock.Hash)
+	b := core.CreateBlock(prevBlock.Index+1, make([]*core.Transaction, 0), prevBlock.Hash)
 	err := ch.AddBlock(b)
 
 	t.Logf("Nonce: %d, Calculated Hash: %s, Expected Prefix: %d", b.Nonce, b.Hash, b.Difficulty)
@@ -23,7 +23,7 @@ func TestCalculateNonceAndDifficulty(t *testing.T) {
 	b := &core.Block{
 		Index:        1,
 		Timestamp:    1234567890,
-		Transactions: "test",
+		Transactions: make([]*core.Transaction, 0),
 		PreviousHash: "abc123",
 		Difficulty:   1,
 		Nonce:        0,
