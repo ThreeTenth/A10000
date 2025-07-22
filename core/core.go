@@ -78,17 +78,17 @@ func (b *Block) String() []byte {
 
 // Blockchain 区块链
 type Blockchain struct {
-	List []*Block
+	Blocks []*Block // 区块链
 }
 
 // GenesisBlock 创世区块
 func (ch *Blockchain) GenesisBlock() {
-	ch.List = append(ch.List, CreateBlock(0, make([]*Transaction, 0), "0"))
+	ch.Blocks = append(ch.Blocks, CreateBlock(0, make([]*Transaction, 0), "0"))
 }
 
 // AddBlock 向区块链中添加一个区块
 func (ch *Blockchain) AddBlock(b *Block) error {
-	lastBlock := ch.List[len(ch.List)-1]
+	lastBlock := ch.Blocks[len(ch.Blocks)-1]
 
 	if b.Index != lastBlock.Index+1 {
 		return errors.New("无效的区块: Index 错误")
@@ -102,7 +102,7 @@ func (ch *Blockchain) AddBlock(b *Block) error {
 		return err
 	}
 
-	ch.List = append(ch.List, b)
+	ch.Blocks = append(ch.Blocks, b)
 
 	return nil
 }
@@ -114,7 +114,7 @@ func (ch *Blockchain) AddBlock(b *Block) error {
 // 注意: 需要遍历所有区块和交易.
 func (ch *Blockchain) FindUTXO(address string) []*Transaction {
 	utxo := make([]*Transaction, 0)
-	for _, block := range ch.List {
+	for _, block := range ch.Blocks {
 		if block == nil || block.Transactions == nil {
 			continue
 		}

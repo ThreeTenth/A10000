@@ -7,7 +7,7 @@ import (
 
 func TestCreateBlock(t *testing.T) {
 	ch := core.CreateBlockchain()
-	prevBlock := ch.List[len(ch.List)-1]
+	prevBlock := ch.Blocks[len(ch.Blocks)-1]
 	b := core.CreateBlock(prevBlock.Index+1, make([]*core.Transaction, 0), prevBlock.Hash)
 	err := ch.AddBlock(b)
 
