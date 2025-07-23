@@ -6,10 +6,22 @@ import (
 )
 
 func TestCreateBlock(t *testing.T) {
+	tom, err := core.NewWallet()
+	if err != nil {
+		t.Fatalf("Failed to generate tom: %v", err)
+	}
+
 	ch := core.CreateBlockchain()
-	prevBlock := ch.Blocks[len(ch.Blocks)-1]
-	b := core.CreateBlock(prevBlock.Index+1, make([]*core.Transaction, 0), prevBlock.Hash)
-	err := ch.AddBlock(b)
+	genesisTx := core.NewCoinbaseTX(tom.Address(), 50)
+	err = ch.GenesisBlock(genesisTx)
+	if err != nil {
+		t.Fatalf("Failed to create genesis block: %v", err)
+	}
+	index := len(ch.Blocks)
+	previousHash := ch.Blocks[len(ch.Blocks)-1].Hash
+	tomCoinbaseTx := core.NewCoinbaseTX(tom.Address(), 50)
+	b := core.CreateBlock(int64(index), []*core.Transaction{tomCoinbaseTx}, previousHash)
+	err = ch.AddBlock(b)
 
 	t.Logf("Nonce: %d, Calculated Hash: %s, Expected Prefix: %d", b.Nonce, b.Hash, b.Difficulty)
 
